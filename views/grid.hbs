@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Каталог растворов</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="app">
+  <div class="screen grid-screen">
+    <h1 class="title">Каталог растворов</h1>
+
+    <!-- Фильтр на сервере по молярной концентрации. Без JS: форма
+         отправляется по Enter либо кнопкой, значение возвращается в поле. -->
+    <form class="filter-form" method="GET" action="/list">
+      <label class="field-label" for="filter">Молярная концентрация, моль/л</label>
+      <input class="field-input" id="filter" name="filter" type="text" value="{{filterValue}}">
+      <button type="submit" class="filter-btn">Найти</button>
+    </form>
+
+    <div class="cards-grid">
+      {{#each solutions}}
+        {{> solution-card this}}
+      {{else}}
+        <p class="empty">Ничего не найдено</p>
+      {{/each}}
+    </div>
+
+    {{> navbar}}
+  </div>
+</body>
+</html>

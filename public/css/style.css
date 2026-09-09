@@ -1,0 +1,232 @@
+@import url('https://fonts.googleapis.com/css2?family=Anonymous+Pro:wght@400;700&display=swap');
+
+/*
+  Стилистика взята с TikTok (вертикальная лента поверх видео).
+  3 фирменных цвета с точными кодами:
+    --bg     #0F1117  — почти чёрный фон ленты
+    --green  #4BDE81  — акцент (лайк, кнопки, иконки навигации)
+    --panel  #16181F  — подложки карточек и нижней панели
+  Форма карточек — скруглённые прямоугольники (border-radius 12px), как в TikTok.
+*/
+:root {
+  --bg: #0F1117;
+  --panel: #16181F;
+  --border: #6B7280;
+  --green: #4BDE81;
+  --green-bg: #1C3129;
+  --screen-pad: 17px; /* единый горизонтальный отступ контента на всех страницах */
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Anonymous Pro', monospace;
+  color: #fff;
+}
+
+/* Резервируем место под вертикальный скроллбар всегда — иначе на «плитке»
+   и «добавлении» (они прокручиваются) экран уезжает на ~8px относительно
+   «ленты» (она не прокручивается), и кажется, что ширина у страниц разная. */
+html { scrollbar-gutter: stable; }
+
+body.app {
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  overflow-x: hidden;
+}
+
+/* Каркас экрана телефона — одинаковый для всех трёх страниц.
+   Горизонтальных отступов на самом .screen нет: контент управляет ими сам,
+   поэтому ширина «полотна» у ленты, добавления и плитки совпадает. */
+.screen {
+  width: 375px;
+  max-width: 100%;
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.title { font-weight: 700; font-size: 20px; }
+.field-label { font-size: 14px; color: var(--border); margin: 16px 0 6px; }
+.field-input {
+  background: var(--bg);
+  border: 0.3px solid var(--border);
+  border-radius: 9.85px;
+  height: 40px;
+  padding: 0 12px;
+  font-size: 14px;
+  width: 100%;
+}
+.field-input:focus { outline: none; border-color: var(--green); }
+
+/* --- Нижняя навигация (общая для всех трёх страниц) --- */
+.bottom-nav {
+  margin-top: auto;
+  height: 76px;
+  background: var(--panel);
+  border-top: 0.3px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+.nav-btn {
+  width: 45.7px;
+  height: 44.7px;
+  border-radius: 9.85px;
+  border: 0.3px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+.nav-btn:hover { background: var(--green-bg); }
+
+/* --- Лента --- */
+.feed-screen { padding: 0; }
+.media-wrap { position: relative; width: 100%; flex: 1; overflow: hidden; }
+.media { width: 100%; height: 100%; object-fit: cover; display: block; background: var(--panel); }
+
+.side-actions {
+  position: absolute;
+  right: 16px;
+  bottom: 220px;
+  z-index: 3; /* выше info-overlay, иначе кнопка «Следующий» перекрыта и не кликается */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+.like-btn, .next-btn {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--green);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+.next-btn:hover { background: #37c46a; }
+.like-btn .like-icon { width: 26px; height: 26px; object-fit: contain; }
+.like-btn span { font-size: 14px; margin-top: 2px; }
+
+.info-overlay {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 2;
+  padding: 24px var(--screen-pad) 100px;
+  background: linear-gradient(to top, rgba(15, 17, 23, 0.95) 40%, transparent 100%);
+}
+.info-overlay .description,
+.info-overlay .field { font-size: 14px; line-height: 1.5; margin-top: 8px; color: #E5E7EB; }
+
+/* «больше / меньше» на чистом HTML (<details>) */
+.desc-more { display: inline; }
+.desc-more > summary {
+  display: inline;
+  list-style: none;
+  color: var(--green);
+  cursor: pointer;
+}
+.desc-more > summary::-webkit-details-marker { display: none; }
+.desc-more > summary::after { content: ' больше'; }
+.desc-more[open] > summary::after { content: ' меньше'; }
+
+/* --- Добавление --- */
+.add-screen { padding: 20px 0 0; }
+.add-card {
+  background: var(--panel);
+  border: 0.3px solid var(--border);
+  border-radius: 12px;
+  margin: 0 var(--screen-pad);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+.media-buttons { display: flex; gap: 12px; margin-top: 6px; }
+.media-btn {
+  flex: 1; height: 40px;
+  background: transparent;
+  border: 0.3px solid var(--border);
+  border-radius: 9.85px;
+  color: var(--border);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.media-btn:hover { background: var(--green-bg); color: var(--green); }
+.submit-btn {
+  margin-top: 24px;
+  height: 44px;
+  background: var(--green-bg);
+  border: 0.5px solid var(--green);
+  border-radius: 10px;
+  color: var(--green);
+  font-size: 14px;
+}
+
+/* --- Плитка --- */
+.grid-screen { padding: 20px 0 0; }
+.grid-screen .title { padding: 0 var(--screen-pad); }
+.filter-form {
+  margin-bottom: 16px;
+  padding: 0 var(--screen-pad);
+  display: flex;
+  flex-direction: column;
+}
+/* больший зазор между подписью и полем — как на странице «Добавление» */
+.filter-form .field-label { margin-bottom: 12px; }
+.filter-btn {
+  align-self: flex-start;
+  margin-top: 12px;
+  height: 36px;
+  padding: 0 18px;
+  background: transparent;
+  border: 0.5px solid var(--green);
+  border-radius: 9.85px;
+  color: var(--green);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+/* hover как у кнопок нижней навигации: подложка --green-bg, без яркой заливки */
+.filter-btn:hover { background: var(--green-bg); }
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 0 var(--screen-pad) 20px;
+}
+.solution-card {
+  background: var(--panel);
+  border: 0.3px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.solution-card:hover { border-color: var(--green); transform: translateY(-2px); }
+.solution-card__image { width: 100%; height: 120px; object-fit: cover; background: var(--bg); border-radius: 8px; }
+.solution-card__title { font-size: 14px; font-weight: 700; margin-top: 10px; }
+.solution-card__likes {
+  color: var(--green);
+  font-size: 14px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.solution-card__like-icon { width: 16px; height: 16px; object-fit: contain; }
+.solution-card__field { font-size: 14px; color: #E5E7EB; margin-top: 6px; overflow-wrap: anywhere; }
+
+.empty { font-size: 14px; color: var(--border); padding: 40px var(--screen-pad); text-align: center; }

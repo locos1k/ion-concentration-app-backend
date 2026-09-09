@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{#if solution}}{{solution.substanceName}}{{else}}Лента{{/if}}</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="app">
+  <div class="screen feed-screen">
+    {{#if solution}}
+    <div class="media-wrap">
+      <video class="media" autoplay muted loop playsinline poster="{{solution.imageUrl}}">
+        <!-- src берётся из MinIO: MEDIA_BASE_URL + '/' + solution.video -->
+        <source src="{{solution.videoUrl}}">
+      </video>
+
+      <div class="side-actions">
+        <div class="like-btn">
+          <img class="like-icon" src="/img/like-icon.png" alt="Лайки">
+          <span>{{solution.likesCount}}</span>
+        </div>
+
+        <!-- «Следующий» — обычная ссылка с query-параметром, GET-навигация без JS -->
+        <a class="next-btn" href="/{{solution.id}}?next=true" aria-label="Следующий">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
+            <path d="M9 6l6 6-6 6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </div>
+
+      <div class="info-overlay">
+        <h1 class="title">{{solution.substanceName}}</h1>
+
+        <!-- «больше / меньше» без JS: нативный <details>, текст не дублируется -->
+        <div class="description">{{solution.descriptionShort}}{{#if solution.descriptionRest}}<details class="desc-more"><summary></summary>{{solution.descriptionRest}}</details>{{/if}}</div>
+
+        <p class="field">Тип электролита: {{solution.electrolyteType}}</p>
+        <p class="field">Молярная концентрация: {{solution.molarConcentration}} моль/л</p>
+      </div>
+    </div>
+    {{else}}
+      <p class="empty">Опубликованных растворов пока нет</p>
+    {{/if}}
+
+    {{> navbar}}
+  </div>
+</body>
+</html>
