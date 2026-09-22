@@ -10,11 +10,18 @@
   <div class="screen grid-screen">
     <h1 class="title">Каталог растворов</h1>
 
-    <!-- Фильтр на сервере по молярной концентрации. Без JS: форма
-         отправляется по Enter либо кнопкой, значение возвращается в поле. -->
-    <form class="filter-form" method="GET" action="/list">
-      <label class="field-label" for="filter">Молярная концентрация, моль/л</label>
-      <input class="field-input" id="filter" name="filter" type="text" value="{{filterValue}}">
+    <!-- Двойной слайдер на чистом HTML: два <input type=range>, наложенные
+         друг на друга (см. .range-slider в CSS), оба на всём диапазоне
+         FILTER_RANGE независимо друг от друга. Фильтр на сервере — растворы
+         с концентрацией между min и max; если бегунки перепутаны местами
+         (min > max), это не ошибка — просто ничего не находится. -->
+    <form class="filter-form" method="GET" action="/solutions/list">
+      <label class="field-label">Молярная концентрация, моль/л: от {{filterMin}} до {{filterMax}}</label>
+      <div class="range-slider">
+        <div class="range-slider__track"></div>
+        <input type="range" name="min" min="{{filterBoundMin}}" max="{{filterBoundMax}}" step="{{filterStep}}" value="{{filterMin}}">
+        <input type="range" name="max" min="{{filterBoundMin}}" max="{{filterBoundMax}}" step="{{filterStep}}" value="{{filterMax}}">
+      </div>
       <button type="submit" class="filter-btn">Найти</button>
     </form>
 

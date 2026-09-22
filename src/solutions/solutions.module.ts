@@ -1,4 +1,3 @@
-// src/solutions/solutions.module.ts
 import { Module } from '@nestjs/common';
 import { SolutionsController } from './solutions.controller.js';
 import { SolutionsService } from './solutions.service.js';

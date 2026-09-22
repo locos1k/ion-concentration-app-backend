@@ -1,20 +1,37 @@
-// src/solutions/solutions.service.ts
 import { Injectable } from '@nestjs/common';
 import { Solution, SolutionView } from './solution.model.js';
 
-// Базовый адрес хранилища медиа — публичный бакет MinIO (S3 API на :9000).
-// Полный URL картинки/видео = MEDIA_BASE_URL + '/' + ключ файла (поля image/video).
-// Переопределяется переменной окружения MEDIA_BASE_URL (см. docker-compose.yml).
 const MEDIA_BASE_URL =
   process.env.MEDIA_BASE_URL ?? 'http://localhost:9000/solution-assets';
 
-// Длина видимой части описания на «ленте» до кнопки «больше»
-const DESCRIPTION_HEAD = 90;
+// Видимая часть описания на «ленте» до кнопки «Ещё» — подобрана так,
+// чтобы влезало ровно 2 строки в колонку шириной 341px (шрифт 14px monospace).
+const DESCRIPTION_HEAD = 65;
+
+// Границы и шаг двойного слайдера фильтра на «Плитке» (моль/л).
+export const FILTER_RANGE = { min: 0, max: 0.25, step: 0.01 } as const;
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+// Разбирает сырые query-параметры слайдера в валидную пару границ: подставляет
+// дефолты при отсутствии/мусоре и зажимает в FILTER_RANGE. Местами НЕ меняет —
+// если бегунки перепутаны (min > max), это не ошибка, просто по такому
+// диапазону ничего не найдётся (getAllPublished отдаст пустой список).
+export function resolveFilterRange(minRaw?: string, maxRaw?: string): { min: number; max: number } {
+  const parse = (raw: string | undefined, fallback: number) => {
+    const value = Number(raw);
+    return raw !== undefined && raw.trim() !== '' && !Number.isNaN(value) ? value : fallback;
+  };
+
+  const min = clamp(parse(minRaw, FILTER_RANGE.min), FILTER_RANGE.min, FILTER_RANGE.max);
+  const max = clamp(parse(maxRaw, FILTER_RANGE.max), FILTER_RANGE.min, FILTER_RANGE.max);
+  return { min, max };
+}
 
 @Injectable()
 export class SolutionsService {
-  // Единственная модель-коллекция на всё приложение (без БД, как требует ЛР1).
-  // Медиа хранятся двумя отдельными полями-ключами на латинице (image / video).
   private solutions: Solution[] = [
     {
       id: 1,
@@ -24,10 +41,10 @@ export class SolutionsService {
       molarConcentration: 0.1,
       description:
         'Сильная одноосновная кислота. В разбавленных водных растворах диссоциирует практически полностью: HCl -> H+ + Cl-. Раствор бесцветный, сильно пахнет хлороводородом.',
-      volumeMl: 250,
+      ph: 1,
       image: 'HCl.PNG',
       video: 'hcl.MP4',
-      likedBy: Array.from({ length: 18 }, (_, i) => `user${i}`),
+      likedBy: [2, 5, 8, 9, 11, 14, 17, 19, 23, 26, 29, 31, 34, 37, 40, 42, 45, 48],
       status: 'published',
     },
     {
@@ -38,10 +55,10 @@ export class SolutionsService {
       molarConcentration: 0.05,
       description:
         'Сильное однокислотное основание, в водном растворе диссоциирует нацело: NaOH -> Na+ + OH-. Растворение сопровождается сильным разогревом.',
-      volumeMl: 200,
+      ph: 12.7,
       image: 'NaOH.PNG',
       video: 'naoh.MP4',
-      likedBy: Array.from({ length: 4 }, (_, i) => `user${i}`),
+      likedBy: [3, 10, 21, 34],
       status: 'published',
     },
     {
@@ -52,10 +69,10 @@ export class SolutionsService {
       molarConcentration: 0.2,
       description:
         'Соль сильной кислоты и сильного основания, полностью диссоциирует: NaCl -> Na+ + Cl-. Среда раствора нейтральная, гидролиза нет.',
-      volumeMl: 300,
+      ph: 7,
       image: 'NaCl.PNG',
       video: 'nacl.mov',
-      likedBy: Array.from({ length: 13 }, (_, i) => `user${i}`),
+      likedBy: [1, 3, 5, 6, 7, 12, 15, 18, 22, 25, 29, 33, 36],
       status: 'published',
     },
     {
@@ -66,10 +83,13 @@ export class SolutionsService {
       molarConcentration: 0.01,
       description:
         'Сильная двухосновная кислота, диссоциирует ступенчато: по первой ступени практически полностью, по второй — частично.',
-      volumeMl: 150,
+      ph: 1.7,
       image: 'H2SO4.PNG',
       video: 'h2so4.MP4',
-      likedBy: Array.from({ length: 27 }, (_, i) => `user${i}`),
+      likedBy: [
+        1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13, 14, 15, 16, 18, 19, 20, 21, 23, 24, 25, 26, 28, 29,
+        30, 31, 33,
+      ],
       status: 'published',
     },
     {
@@ -80,11 +100,11 @@ export class SolutionsService {
       molarConcentration: 0.03,
       description:
         'Слабое основание, в растворе диссоциирует лишь частично: NH3 + H2O <-> NH4+ + OH-. Степень диссоциации мала.',
-      volumeMl: 100,
+      ph: 11.1,
       image: 'NH3.PNG',
       video: 'nh3.MP4',
       likedBy: [],
-      status: 'draft', // ← единственный черновик, он же на странице «Добавление»
+      status: 'draft',
     },
     {
       id: 6,
@@ -94,47 +114,42 @@ export class SolutionsService {
       molarConcentration: 0.1,
       description:
         'Слабая одноосновная кислота, диссоциирует обратимо и незначительно: CH3COOH <-> CH3COO- + H+.',
-      volumeMl: 120,
+      ph: 2.9,
       image: 'CH3COOH.PNG',
       video: 'ch3cooh.MP4',
-      likedBy: Array.from({ length: 9 }, (_, i) => `user${i}`),
-      status: 'deleted', // ← удалённые в интерфейсе не показываются
+      likedBy: [4, 7, 12, 15, 19, 22, 26, 30, 33],
+      status: 'deleted',
     },
   ];
 
-  // ---- Запрос 1: лента (по id, либо следующий за ним, если ?next=true) ----
   findFeedItem(id: number, next: boolean): SolutionView | undefined {
     const published = this.solutions.filter((s) => s.status === 'published');
     if (published.length === 0) return undefined;
 
     const index = published.findIndex((s) => s.id === id);
-    if (index === -1) return this.toView(published[0]); // не нашли — отдаём первый
+    if (index === -1) return this.toView(published[0]);
 
     if (next) {
-      // Циклический переход: после последнего элемента — снова первый
       return this.toView(published[(index + 1) % published.length]);
     }
     return this.toView(published[index]);
   }
 
-  // ---- Запрос 2: черновик для страницы «Добавление» ----
   getDraft(): SolutionView | undefined {
     const draft = this.solutions.find((s) => s.status === 'draft');
     return draft ? this.toView(draft) : undefined;
   }
 
-  // ---- Запрос 3: список всех опубликованных + фильтр по молярной концентрации ----
-  getAllPublished(filter?: string): SolutionView[] {
-    let published = this.solutions.filter((s) => s.status === 'published');
+  // Двойной слайдер: показываем растворы с концентрацией в диапазоне [min; max].
+  getAllPublished(min?: string, max?: string): SolutionView[] {
+    const published = this.solutions.filter((s) => s.status === 'published');
+    const { min: minVal, max: maxVal } = resolveFilterRange(min, max);
 
-    const value = Number(filter);
-    if (filter && filter.trim() && !Number.isNaN(value)) {
-      published = published.filter((s) => s.molarConcentration === value);
-    }
-    return published.map((s) => this.toView(s));
+    return published
+      .filter((s) => s.molarConcentration >= minVal && s.molarConcentration <= maxVal)
+      .map((s) => this.toView(s));
   }
 
-  // Услуга -> view-модель для шаблона
   private toView(s: Solution): SolutionView {
     const [head, rest] = this.splitDescription(s.description);
     return {
@@ -147,7 +162,6 @@ export class SolutionsService {
     };
   }
 
-  // Делит описание на видимую часть и «хвост» для блока «больше/меньше»
   private splitDescription(text: string): [string, string] {
     if (text.length <= DESCRIPTION_HEAD) return [text, ''];
     let cut = text.lastIndexOf(' ', DESCRIPTION_HEAD);

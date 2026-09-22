@@ -10,33 +10,42 @@
   <div class="screen feed-screen">
     {{#if solution}}
     <div class="media-wrap">
-      <video class="media" autoplay muted loop playsinline poster="{{solution.imageUrl}}">
-        <!-- src берётся из MinIO: MEDIA_BASE_URL + '/' + solution.video -->
+      <!-- poster не задаём намеренно: он моргал перед стартом видео -->
+      <video class="media" autoplay muted loop playsinline preload="auto">
         <source src="{{solution.videoUrl}}">
       </video>
 
+      <!-- Справа сверху вниз: лайк, «следующий», затем иконки-показатели pH и молярной концентрации -->
       <div class="side-actions">
         <div class="like-btn">
           <img class="like-icon" src="/img/like-icon.png" alt="Лайки">
           <span>{{solution.likesCount}}</span>
         </div>
 
-        <!-- «Следующий» — обычная ссылка с query-параметром, GET-навигация без JS -->
-        <a class="next-btn" href="/{{solution.id}}?next=true" aria-label="Следующий">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
+        <a class="next-btn" href="/solutions/{{solution.id}}?next=true" aria-label="Следующий">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" style="transform: rotate(90deg); display: inline-block;">
             <path d="M9 6l6 6-6 6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </a>
+
+        <div class="field-badge" aria-label="pH">
+          <span class="field-badge__label">pH</span>
+          <span class="field-badge__value">{{solution.ph}}</span>
+        </div>
+
+        <div class="field-badge" aria-label="Молярная концентрация">
+          <span class="field-badge__label">моль/л</span>
+          <span class="field-badge__value">{{solution.molarConcentration}}</span>
+        </div>
       </div>
 
       <div class="info-overlay">
-        <h1 class="title">{{solution.substanceName}}</h1>
+        <div class="info-text">
+          <h1 class="title">{{solution.substanceName}}</h1>
 
-        <!-- «больше / меньше» без JS: нативный <details>, текст не дублируется -->
-        <div class="description">{{solution.descriptionShort}}{{#if solution.descriptionRest}}<details class="desc-more"><summary></summary>{{solution.descriptionRest}}</details>{{/if}}</div>
-
-        <p class="field">Тип электролита: {{solution.electrolyteType}}</p>
-        <p class="field">Молярная концентрация: {{solution.molarConcentration}} моль/л</p>
+          <!-- «Ещё» без JS: нативный <details>, видно ровно 2 строки до раскрытия -->
+          <div class="description">{{solution.descriptionShort}}{{#if solution.descriptionRest}}<details class="desc-more"><summary></summary>{{solution.descriptionRest}}</details>{{/if}}</div>
+        </div>
       </div>
     </div>
     {{else}}

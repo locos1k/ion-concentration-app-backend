@@ -1,20 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Anonymous+Pro:wght@400;700&display=swap');
 
-/*
-  Стилистика взята с TikTok (вертикальная лента поверх видео).
-  3 фирменных цвета с точными кодами:
-    --bg     #0F1117  — почти чёрный фон ленты
-    --green  #4BDE81  — акцент (лайк, кнопки, иконки навигации)
-    --panel  #16181F  — подложки карточек и нижней панели
-  Форма карточек — скруглённые прямоугольники (border-radius 12px), как в TikTok.
-*/
 :root {
   --bg: #0F1117;
   --panel: #16181F;
   --border: #6B7280;
   --green: #4BDE81;
   --green-bg: #1C3129;
-  --screen-pad: 17px; /* единый горизонтальный отступ контента на всех страницах */
+  --screen-pad: 17px; 
 }
 
 * {
@@ -25,9 +17,6 @@
   color: #fff;
 }
 
-/* Резервируем место под вертикальный скроллбар всегда — иначе на «плитке»
-   и «добавлении» (они прокручиваются) экран уезжает на ~8px относительно
-   «ленты» (она не прокручивается), и кажется, что ширина у страниц разная. */
 html { scrollbar-gutter: stable; }
 
 body.app {
@@ -37,9 +26,6 @@ body.app {
   overflow-x: hidden;
 }
 
-/* Каркас экрана телефона — одинаковый для всех трёх страниц.
-   Горизонтальных отступов на самом .screen нет: контент управляет ими сам,
-   поэтому ширина «полотна» у ленты, добавления и плитки совпадает. */
 .screen {
   width: 375px;
   max-width: 100%;
@@ -63,7 +49,6 @@ body.app {
 }
 .field-input:focus { outline: none; border-color: var(--green); }
 
-/* --- Нижняя навигация (общая для всех трёх страниц) --- */
 .bottom-nav {
   margin-top: auto;
   height: 76px;
@@ -85,16 +70,15 @@ body.app {
 }
 .nav-btn:hover { background: var(--green-bg); }
 
-/* --- Лента --- */
 .feed-screen { padding: 0; }
 .media-wrap { position: relative; width: 100%; flex: 1; overflow: hidden; }
-.media { width: 100%; height: 100%; object-fit: cover; display: block; background: var(--panel); }
+.media { width: 100%; height: 100%; object-fit: cover; display: block; background: var(--bg); }
 
 .side-actions {
   position: absolute;
   right: 16px;
-  bottom: 220px;
-  z-index: 3; /* выше info-overlay, иначе кнопка «Следующий» перекрыта и не кликается */
+  bottom: 100px;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -115,17 +99,34 @@ body.app {
 .like-btn .like-icon { width: 26px; height: 26px; object-fit: contain; }
 .like-btn span { font-size: 14px; margin-top: 2px; }
 
+/* Иконки-показатели pH и молярной концентрации — под лайком и «следующий»,
+   круглые, как раньше. Подпись у второй — «моль/л», не однобуквенная «M». */
+.field-badge {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--green);
+  background: rgba(15, 17, 23, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+}
+.field-badge__label { font-size: 8px; color: var(--green); font-weight: 700; }
+.field-badge__value { font-size: 12px; margin-top: 1px; }
+
 .info-overlay {
   position: absolute;
   left: 0; right: 0; bottom: 0;
   z-index: 2;
-  padding: 24px var(--screen-pad) 100px;
+  padding: 24px var(--screen-pad) 15px;
   background: linear-gradient(to top, rgba(15, 17, 23, 0.95) 40%, transparent 100%);
 }
-.info-overlay .description,
-.info-overlay .field { font-size: 14px; line-height: 1.5; margin-top: 8px; color: #E5E7EB; }
+/* Отступ справа, чтобы текст не заезжал под колонку иконок (.side-actions) */
+.info-text { padding-right: 60px; }
+.info-overlay .description { font-size: 14px; line-height: 1.5; margin-top: 8px; color: #E5E7EB; }
 
-/* «больше / меньше» на чистом HTML (<details>) */
 .desc-more { display: inline; }
 .desc-more > summary {
   display: inline;
@@ -134,10 +135,9 @@ body.app {
   cursor: pointer;
 }
 .desc-more > summary::-webkit-details-marker { display: none; }
-.desc-more > summary::after { content: ' больше'; }
-.desc-more[open] > summary::after { content: ' меньше'; }
+.desc-more > summary::after { content: ' Ещё'; }
+.desc-more[open] > summary::after { content: ' Свернуть'; }
 
-/* --- Добавление --- */
 .add-screen { padding: 20px 0 0; }
 .add-card {
   background: var(--panel);
@@ -159,8 +159,19 @@ body.app {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  padding: 0 10px;
   cursor: pointer;
   transition: background 0.15s ease;
+}
+/* маленькое превью справа от подписи «+ Фото» / «+ Видео» */
+.media-thumb {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 5px;
+  background: var(--bg);
 }
 .media-btn:hover { background: var(--green-bg); color: var(--green); }
 .submit-btn {
@@ -173,7 +184,6 @@ body.app {
   font-size: 14px;
 }
 
-/* --- Плитка --- */
 .grid-screen { padding: 20px 0 0; }
 .grid-screen .title { padding: 0 var(--screen-pad); }
 .filter-form {
@@ -182,10 +192,72 @@ body.app {
   display: flex;
   flex-direction: column;
 }
-/* больший зазор между подписью и полем — как на странице «Добавление» */
-.filter-form .field-label { margin-bottom: 12px; }
+
+.filter-form .field-label { margin-bottom: 8px; }
+
+/* Двойной слайдер без JS: два <input type=range> наложены друг на друга.
+   У обоих клик проходит только через сам бегунок (::-webkit-slider-thumb),
+   поэтому оба конца диапазона тянутся независимо.
+
+   Видимую полоску рисует ОТДЕЛЬНЫЙ статичный .range-slider__track, а не
+   нативный трек инпутов — у него сделан отступ ровно в половину ширины
+   бегунка (9px) с каждой стороны. Так линия начинается и заканчивается
+   там, куда бегунок физически может доехать (браузер держит весь бегунок
+   внутри трека, поэтому сам бегунок никогда не доходит центром до самого
+   края) — иначе левый бегунок в положении min выглядит «обрезанным» и не
+   доезжающим до начала полоски. */
+.range-slider { position: relative; height: 28px; margin-bottom: 4px; }
+.range-slider__track {
+  position: absolute;
+  left: 9px; right: 9px; top: 50%;
+  height: 4px;
+  transform: translateY(-50%);
+  background: var(--border);
+  border-radius: 2px;
+}
+.range-slider input[type="range"] {
+  position: absolute;
+  left: 0; top: 50%;
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  transform: translateY(-50%);
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  pointer-events: none; /* трек инпута не кликается — только бегунок */
+}
+/* нативный трек делаем невидимым — линию рисует .range-slider__track выше */
+.range-slider input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+}
+.range-slider input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: transparent;
+}
+.range-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--green);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+}
+.range-slider input[type="range"]::-moz-range-thumb {
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--green);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+}
+
 .filter-btn {
-  align-self: flex-start;
   margin-top: 12px;
   height: 36px;
   padding: 0 18px;
@@ -199,6 +271,7 @@ body.app {
 }
 /* hover как у кнопок нижней навигации: подложка --green-bg, без яркой заливки */
 .filter-btn:hover { background: var(--green-bg); }
+
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

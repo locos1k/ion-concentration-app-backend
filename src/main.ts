@@ -6,13 +6,8 @@ import { fileURLToPath } from 'node:url';
 import hbs from 'hbs';
 import { AppModule } from './app.module.js';
 
-// В ESM нет __dirname — восстанавливаем его из import.meta.url.
-// Скомпилированный main.js лежит в dist/, поэтому '..' даёт корень проекта.
 const rootDir = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-// Регистрируем частичные шаблоны из views/partials.
-// Делаем это вручную и синхронно: hbs.registerPartials() заменяет дефис на
-// подчёркивание в имени, из-за чего {{> solution-card}} не находится.
 function registerPartials(dir: string) {
   for (const file of readdirSync(dir)) {
     if (extname(file) !== '.hbs') continue;
