@@ -1,20 +1,17 @@
-export type SolutionStatus = 'draft' | 'published' | 'deleted';
+import { SolutionStatus } from './entities/solution.entity.js';
 
-export interface Solution {
+export interface SolutionView {
   id: number;
-  substanceName: string; // "Соляная кислота"
-  chemicalFormula: string; // "HCl"
-  electrolyteType: string; // кислота / основание / соль
-  molarConcentration: number; // моль/л — числовое поле, по нему фильтруем
-  description: string; // текстовое описание (диссоциация и т.п.)
-  ph: number; // водородный показатель раствора (0–14)
-  image: string; // ключ файла-изображения в MinIO на латинице, напр. "hcl.svg"
-  video: string; // ключ файла-видео в MinIO на латинице, напр. "hcl.mp4"
-  likedBy: number[]; // готовый список числовых id пользователей
+  substanceName: string;
+  chemicalFormula: string;
+  electrolyteType: string;
+  molarConcentration: number;
+  description: string;
+  ph: number;
+  image: string;
+  video: string;
+  likedBy: number[];
   status: SolutionStatus;
-}
-
-export interface SolutionView extends Solution {
   imageUrl: string;
   videoUrl: string;
   likesCount: number;

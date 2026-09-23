@@ -1,10 +1,16 @@
-<a class="solution-card" href="/solutions/{{id}}">
-  <img class="solution-card__image" src="{{imageUrl}}" alt="{{substanceName}}">
-  <p class="solution-card__title">{{substanceName}}</p>
-  <p class="solution-card__likes">
-    <img class="solution-card__like-icon" src="/img/like-icon.png" alt="Лайки">
-    {{likesCount}}
-  </p>
-  <p class="solution-card__field">Тип: {{electrolyteType}}</p>
-  <p class="solution-card__field">Молярная концентрация: {{molarConcentration}} моль/л</p>
-</a>
+<div class="solution-card-wrapper">
+  <a class="solution-card" href="/solutions/{{id}}">
+    <img class="solution-card__image" src="{{imageUrl}}" alt="{{substanceName}}">
+    <p class="solution-card__title">{{substanceName}}</p>
+    <p class="solution-card__likes">
+      <img class="solution-card__like-icon" src="/img/like-icon.png" alt="Лайки">
+      {{likesCount}}
+    </p>
+    <p class="solution-card__field">Тип: {{electrolyteType}}</p>
+    <p class="solution-card__field">Молярная концентрация: {{molarConcentration}} моль/л</p>
+  </a>
+  <!-- Логическое удаление — смена статуса сырым SQL UPDATE на бэкенде -->
+  <form class="delete-form" method="POST" action="/solutions/{{id}}/delete">
+    <button type="submit" class="delete-btn" aria-label="Удалить раствор «{{substanceName}}»">✕</button>
+  </form>
+</div>

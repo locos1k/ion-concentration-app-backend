@@ -10,7 +10,9 @@
   <div class="screen feed-screen">
     {{#if solution}}
     <div class="media-wrap">
-      <!-- poster не задаём намеренно: он моргал перед стартом видео -->
+      <!-- poster не задаём намеренно: он моргал перед стартом видео.
+           videoUrl всегда заполнен — при пустом поле в БД сервис подставляет
+           дефолтное видео с SSR-сервера. -->
       <video class="media" autoplay muted loop playsinline preload="auto">
         <source src="{{solution.videoUrl}}">
       </video>

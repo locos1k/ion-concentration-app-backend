@@ -1,8 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { Solution, SolutionView } from './solution.model.js';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Between, MoreThan, Repository } from 'typeorm';
+import { Solution } from './entities/solution.entity.js';
+import { SolutionView } from './solution.model.js';
 
 const MEDIA_BASE_URL =
   process.env.MEDIA_BASE_URL ?? 'http://localhost:9000/solution-assets';
+
+// Фото/видео по умолчанию — для новых черновиков (в ЛР2 файлы при создании
+// не сохраняются) и для случаев с недоступным файлом. Хранятся локально на
+// SSR-сервере (public/img), а не в MinIO.
+const DEFAULT_IMAGE_URL = '/img/default-solution.PNG';
+const DEFAULT_VIDEO_URL = '/img/default-solution.mp4';
+
+// Пока нет реального пользователя (авторизация — ЛР4), все черновики
+// принадлежат одному фиксированному "создателю". Станет функцией-singleton в ЛР3.
+const DEFAULT_CREATOR_ID = 1;
 
 // Видимая часть описания на «ленте» до кнопки «Ещё» — подобрана так,
 // чтобы влезало ровно 2 строки в колонку шириной 341px (шрифт 14px monospace).
@@ -32,131 +45,140 @@ export function resolveFilterRange(minRaw?: string, maxRaw?: string): { min: num
 
 @Injectable()
 export class SolutionsService {
-  private solutions: Solution[] = [
-    {
-      id: 1,
-      substanceName: 'Соляная кислота',
-      chemicalFormula: 'HCl',
-      electrolyteType: 'кислота',
-      molarConcentration: 0.1,
-      description:
-        'Сильная одноосновная кислота. В разбавленных водных растворах диссоциирует практически полностью: HCl -> H+ + Cl-. Раствор бесцветный, сильно пахнет хлороводородом.',
-      ph: 1,
-      image: 'HCl.PNG',
-      video: 'hcl.MP4',
-      likedBy: [2, 5, 8, 9, 11, 14, 17, 19, 23, 26, 29, 31, 34, 37, 40, 42, 45, 48],
-      status: 'published',
-    },
-    {
-      id: 2,
-      substanceName: 'Гидроксид натрия',
-      chemicalFormula: 'NaOH',
-      electrolyteType: 'основание',
-      molarConcentration: 0.05,
-      description:
-        'Сильное однокислотное основание, в водном растворе диссоциирует нацело: NaOH -> Na+ + OH-. Растворение сопровождается сильным разогревом.',
-      ph: 12.7,
-      image: 'NaOH.PNG',
-      video: 'naoh.MP4',
-      likedBy: [3, 10, 21, 34],
-      status: 'published',
-    },
-    {
-      id: 3,
-      substanceName: 'Хлорид натрия',
-      chemicalFormula: 'NaCl',
-      electrolyteType: 'соль',
-      molarConcentration: 0.2,
-      description:
-        'Соль сильной кислоты и сильного основания, полностью диссоциирует: NaCl -> Na+ + Cl-. Среда раствора нейтральная, гидролиза нет.',
-      ph: 7,
-      image: 'NaCl.PNG',
-      video: 'nacl.mov',
-      likedBy: [1, 3, 5, 6, 7, 12, 15, 18, 22, 25, 29, 33, 36],
-      status: 'published',
-    },
-    {
-      id: 4,
-      substanceName: 'Серная кислота',
-      chemicalFormula: 'H2SO4',
-      electrolyteType: 'кислота',
-      molarConcentration: 0.01,
-      description:
-        'Сильная двухосновная кислота, диссоциирует ступенчато: по первой ступени практически полностью, по второй — частично.',
-      ph: 1.7,
-      image: 'H2SO4.PNG',
-      video: 'h2so4.MP4',
-      likedBy: [
-        1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13, 14, 15, 16, 18, 19, 20, 21, 23, 24, 25, 26, 28, 29,
-        30, 31, 33,
-      ],
-      status: 'published',
-    },
-    {
-      id: 5,
-      substanceName: 'Аммиак',
-      chemicalFormula: 'NH3',
-      electrolyteType: 'основание',
-      molarConcentration: 0.03,
-      description:
-        'Слабое основание, в растворе диссоциирует лишь частично: NH3 + H2O <-> NH4+ + OH-. Степень диссоциации мала.',
-      ph: 11.1,
-      image: 'NH3.PNG',
-      video: 'nh3.MP4',
-      likedBy: [],
-      status: 'draft',
-    },
-    {
-      id: 6,
-      substanceName: 'Уксусная кислота',
-      chemicalFormula: 'CH3COOH',
-      electrolyteType: 'кислота',
-      molarConcentration: 0.1,
-      description:
-        'Слабая одноосновная кислота, диссоциирует обратимо и незначительно: CH3COOH <-> CH3COO- + H+.',
-      ph: 2.9,
-      image: 'CH3COOH.PNG',
-      video: 'ch3cooh.MP4',
-      likedBy: [4, 7, 12, 15, 19, 22, 26, 30, 33],
-      status: 'deleted',
-    },
-  ];
+  constructor(
+    @InjectRepository(Solution)
+    private readonly solutionRepo: Repository<Solution>,
+  ) {}
 
-  findFeedItem(id: number, next: boolean): SolutionView | undefined {
-    const published = this.solutions.filter((s) => s.status === 'published');
-    if (published.length === 0) return undefined;
+  // Лента: каждая ветка — ровно один SELECT ... LIMIT 1, без выборки массива
+  // с фильтрацией в коде (так требует методичка).
+  async findFeedItem(id: number, next: boolean): Promise<SolutionView | undefined> {
+    let entity: Solution | null;
 
-    const index = published.findIndex((s) => s.id === id);
-    if (index === -1) return this.toView(published[0]);
-
-    if (next) {
-      return this.toView(published[(index + 1) % published.length]);
+    if (Number.isNaN(id)) {
+      entity = await this.solutionRepo.findOne({
+        where: { status: 'published' },
+        order: { id: 'ASC' },
+        relations: { likes: true },
+      });
+    } else if (next) {
+      entity = await this.solutionRepo.findOne({
+        where: { status: 'published', id: MoreThan(id) },
+        order: { id: 'ASC' },
+        relations: { likes: true },
+      });
+      if (!entity) {
+        // дошли до конца — заворачиваем на первый опубликованный раствор
+        entity = await this.solutionRepo.findOne({
+          where: { status: 'published' },
+          order: { id: 'ASC' },
+          relations: { likes: true },
+        });
+      }
+    } else {
+      entity = await this.solutionRepo.findOne({
+        where: { id, status: 'published' },
+        relations: { likes: true },
+      });
     }
-    return this.toView(published[index]);
+
+    return entity ? this.toView(entity) : undefined;
   }
 
-  getDraft(): SolutionView | undefined {
-    const draft = this.solutions.find((s) => s.status === 'draft');
-    return draft ? this.toView(draft) : undefined;
+  async getDraft(): Promise<SolutionView | undefined> {
+    const entity = await this.solutionRepo.findOne({
+      where: { status: 'draft' },
+      relations: { likes: true },
+    });
+    return entity ? this.toView(entity) : undefined;
   }
 
   // Двойной слайдер: показываем растворы с концентрацией в диапазоне [min; max].
-  getAllPublished(min?: string, max?: string): SolutionView[] {
-    const published = this.solutions.filter((s) => s.status === 'published');
+  async getAllPublished(min?: string, max?: string): Promise<SolutionView[]> {
     const { min: minVal, max: maxVal } = resolveFilterRange(min, max);
 
-    return published
-      .filter((s) => s.molarConcentration >= minVal && s.molarConcentration <= maxVal)
-      .map((s) => this.toView(s));
+    const entities = await this.solutionRepo.find({
+      where: { status: 'published', molarConcentration: Between(minVal, maxVal) },
+      order: { id: 'ASC' },
+      relations: { likes: true },
+    });
+
+    return entities.map((s) => this.toView(s));
+  }
+
+  // Создание черновика — через ORM. По заданию фото/видео на этом шаге не
+  // сохраняются, только название; остальные поля заполняются на публикации.
+  // Черновик у "создателя" может быть только один — если уже есть, просто
+  // возвращаемся к нему, новую строку не создаём.
+  async createDraft(substanceName: string): Promise<void> {
+    const existing = await this.solutionRepo.findOne({
+      where: { status: 'draft', creatorId: DEFAULT_CREATOR_ID },
+    });
+    if (existing) return;
+
+    const draft = this.solutionRepo.create({
+      substanceName,
+      chemicalFormula: '',
+      electrolyteType: '',
+      molarConcentration: 0,
+      ph: 0,
+      description: '',
+      image: '',
+      video: '',
+      status: 'draft',
+      publishedAt: null,
+      creatorId: DEFAULT_CREATOR_ID,
+    });
+    await this.solutionRepo.save(draft);
+  }
+
+  // Публикация черновика — через ORM. Меняем статус на published и
+  // проставляем дату формирования.
+  async publishDraft(fields: {
+    chemicalFormula: string;
+    electrolyteType: string;
+    molarConcentration: number;
+    ph: number;
+    description: string;
+  }): Promise<void> {
+    const draft = await this.solutionRepo.findOne({
+      where: { status: 'draft', creatorId: DEFAULT_CREATOR_ID },
+    });
+    if (!draft) return;
+
+    await this.solutionRepo.update(draft.id, {
+      ...fields,
+      status: 'published',
+      publishedAt: new Date(),
+    });
+  }
+
+  // Логическое удаление — НЕ через ORM, а сырым SQL UPDATE (так требует
+  // задание ЛР2: получение/создание/публикация через ORM, удаление — курсором).
+  async deleteSolution(id: number): Promise<void> {
+    await this.solutionRepo.query('UPDATE solutions SET status = $1 WHERE solution_id = $2', [
+      'deleted',
+      id,
+    ]);
   }
 
   private toView(s: Solution): SolutionView {
     const [head, rest] = this.splitDescription(s.description);
     return {
-      ...s,
-      imageUrl: `${MEDIA_BASE_URL}/${s.image}`,
-      videoUrl: `${MEDIA_BASE_URL}/${s.video}`,
-      likesCount: s.likedBy.length,
+      id: s.id,
+      substanceName: s.substanceName,
+      chemicalFormula: s.chemicalFormula,
+      electrolyteType: s.electrolyteType,
+      molarConcentration: s.molarConcentration,
+      description: s.description,
+      ph: s.ph,
+      image: s.image,
+      video: s.video,
+      likedBy: s.likes.map((like) => like.userId),
+      status: s.status,
+      imageUrl: s.image ? `${MEDIA_BASE_URL}/${s.image}` : DEFAULT_IMAGE_URL,
+      videoUrl: s.video ? `${MEDIA_BASE_URL}/${s.video}` : DEFAULT_VIDEO_URL,
+      likesCount: s.likes.length,
       descriptionShort: head,
       descriptionRest: rest,
     };

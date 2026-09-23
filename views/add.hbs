@@ -8,14 +8,15 @@
 </head>
 <body class="app">
   <div class="screen add-screen">
-    <form class="add-card" method="GET" action="/solutions/draft">
+    {{#if draft}}
+    <!-- Черновик уже создан (шаг 1 пройден) — дозаполняем поля и публикуем -->
+    <form class="add-card" method="POST" action="/solutions/draft/publish">
       <h1 class="title">Добавление растворов</h1>
 
       <p class="field-label">Медиа</p>
       <div class="media-buttons">
-        <!-- Выбор файла на чистом HTML (label + input type=file). Сам файл
-             не сохраняется — загрузка в MinIO это задача ЛР2. Маленькое превью
-             справа — медиа, уже привязанное к черновику (из MinIO). -->
+        <!-- Новые файлы в этой лабе не сохраняются — превью показывает
+             фото/видео по умолчанию, т.к. у черновика они ещё не заданы. -->
         <label class="media-btn">
           <input type="file" name="photo" accept="image/*" hidden>
           <span>+ Фото</span>
@@ -29,7 +30,7 @@
       </div>
 
       <label class="field-label" for="substanceName">Название вещества</label>
-      <input class="field-input" id="substanceName" name="substanceName" type="text" value="{{draft.substanceName}}">
+      <input class="field-input" id="substanceName" type="text" value="{{draft.substanceName}}" disabled>
 
       <label class="field-label" for="chemicalFormula">Химическая формула</label>
       <input class="field-input" id="chemicalFormula" name="chemicalFormula" type="text" value="{{draft.chemicalFormula}}">
@@ -46,9 +47,31 @@
       <label class="field-label" for="description">Текстовое описание</label>
       <input class="field-input" id="description" name="description" type="text" value="{{draft.description}}">
 
-      <!-- Сохранение (POST) — задача ЛР2. В ЛР1 кнопка задизейблена намеренно. -->
-      <button type="submit" class="submit-btn" disabled>Добавить раствор</button>
+      <button type="submit" class="submit-btn">Опубликовать</button>
     </form>
+    {{else}}
+    <!-- Черновика ещё нет — шаг 1: только название, фото/видео не сохраняются -->
+    <form class="add-card" method="POST" action="/solutions/draft">
+      <h1 class="title">Добавление растворов</h1>
+
+      <p class="field-label">Медиа</p>
+      <div class="media-buttons">
+        <label class="media-btn">
+          <input type="file" name="photo" accept="image/*" hidden>
+          <span>+ Фото</span>
+        </label>
+        <label class="media-btn">
+          <input type="file" name="video" accept="video/*" hidden>
+          <span>+ Видео</span>
+        </label>
+      </div>
+
+      <label class="field-label" for="substanceName">Название вещества</label>
+      <input class="field-input" id="substanceName" name="substanceName" type="text" required>
+
+      <button type="submit" class="submit-btn">Далее</button>
+    </form>
+    {{/if}}
 
     {{> navbar}}
   </div>
