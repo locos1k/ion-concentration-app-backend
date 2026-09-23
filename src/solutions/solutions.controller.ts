@@ -53,9 +53,6 @@ export class SolutionsController {
   @Get('list')
   @Render('grid')
   async getGrid(@Query('min') min?: string, @Query('max') max?: string) {
-    // Нормализуем один раз: те же min/max уходят и в выборку, и в разметку
-    // слайдера, поэтому после сабмита бегунки уже не смогут перескочить друг
-    // друга (см. min/max-атрибуты в grid.hbs).
     const { min: filterMin, max: filterMax } = resolveFilterRange(min, max);
     return {
       solutions: await this.solutionsService.getAllPublished(min, max),

@@ -68,7 +68,6 @@ export class SolutionsService {
         relations: { likes: true },
       });
       if (!entity) {
-        // дошли до конца — заворачиваем на первый опубликованный раствор
         entity = await this.solutionRepo.findOne({
           where: { status: 'published' },
           order: { id: 'ASC' },
