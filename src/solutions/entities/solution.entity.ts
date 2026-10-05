@@ -12,9 +12,6 @@ import { User } from './user.entity.js';
 
 export type SolutionStatus = 'draft' | 'published' | 'deleted';
 
-// pg возвращает NUMERIC строкой (чтобы не терять точность) — приводим к number,
-// т.к. сервис сравнивает molarConcentration/ph как обычные числа. У черновика
-// эти поля ещё NULL — его пропускаем как есть, иначе parseFloat(null) даст NaN.
 const numericTransformer = {
   to: (value: number | null) => value,
   from: (value: string | null) => (value === null ? null : parseFloat(value)),
@@ -28,8 +25,6 @@ export class Solution {
   @Column({ name: 'name', type: 'varchar', length: 70 })
   substanceName: string;
 
-  // description, molar_concentration и ph не заполняются на шаге «Далее» (там
-  // только название + медиа), а появляются при публикации — поэтому nullable.
   @Column({
     name: 'molar_concentration',
     type: 'numeric',

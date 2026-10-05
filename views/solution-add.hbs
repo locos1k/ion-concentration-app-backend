@@ -9,14 +9,11 @@
 <body class="app">
   <div class="screen add-screen">
     {{#if draft}}
-    <!-- Черновик уже создан (шаг 1 пройден) — дозаполняем поля и публикуем -->
     <form class="add-card" method="POST" action="/solutions/draft/publish">
       <h1 class="title">Добавление растворов</h1>
 
       <p class="field-label">Медиа</p>
       <div class="media-buttons">
-        <!-- Новые файлы в этой лабе не сохраняются — превью показывает
-             фото/видео по умолчанию, т.к. у черновика они ещё не заданы. -->
         <label class="media-btn">
           <input type="file" name="photo" accept="image/*" hidden>
           <span>+ Фото</span>
@@ -44,13 +41,11 @@
       <button type="submit" class="submit-btn">Опубликовать</button>
     </form>
     {{else}}
-    <!-- Черновика ещё нет — шаг 1: только название, фото/видео не сохраняются -->
     <form class="add-card" method="POST" action="/solutions/draft">
       <h1 class="title">Добавление растворов</h1>
 
       <p class="field-label">Медиа</p>
       <div class="media-buttons">
-        <!-- Файлов у раствора ещё нет — в превью дефолтные фото/видео -->
         <label class="media-btn">
           <input type="file" name="photo" accept="image/*" hidden>
           <span>+ Фото</span>

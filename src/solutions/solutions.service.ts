@@ -7,31 +7,19 @@ import { SolutionView } from './solution.model.js';
 const MEDIA_BASE_URL =
   process.env.MEDIA_BASE_URL ?? 'http://localhost:9000/solution-assets';
 
-// Фото/видео по умолчанию — для новых черновиков (в ЛР2 файлы при создании
-// не сохраняются) и для случаев с недоступным файлом. Хранятся локально на
-// SSR-сервере (public/img), а не в MinIO.
 export const DEFAULT_IMAGE_URL = '/img/default-solution.PNG';
 export const DEFAULT_VIDEO_URL = '/img/default-solution.mp4';
 
-// Пока нет реального пользователя (авторизация — ЛР4), все черновики
-// принадлежат одному фиксированному "создателю". Станет функцией-singleton в ЛР3.
 const DEFAULT_CREATOR_ID = 1;
 
-// Видимая часть описания на «ленте» до кнопки «Ещё» — подобрана так,
-// чтобы влезало ровно 2 строки в колонку шириной 341px (шрифт 14px monospace).
 const DESCRIPTION_HEAD = 65;
 
-// Границы и шаг двойного слайдера фильтра на «Плитке» (моль/л).
 export const FILTER_RANGE = { min: 0, max: 0.25, step: 0.01 } as const;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-// Разбирает сырые query-параметры слайдера в валидную пару границ: подставляет
-// дефолты при отсутствии/мусоре и зажимает в FILTER_RANGE. Местами НЕ меняет —
-// если бегунки перепутаны (min > max), это не ошибка, просто по такому
-// диапазону ничего не найдётся (getAllPublished отдаст пустой список).
 export function resolveFilterRange(minRaw?: string, maxRaw?: string): { min: number; max: number } {
   const parse = (raw: string | undefined, fallback: number) => {
     const value = Number(raw);
@@ -50,8 +38,6 @@ export class SolutionsService {
     private readonly solutionRepo: Repository<Solution>,
   ) {}
 
-  // Лента: каждая ветка — ровно один SELECT ... LIMIT 1, без выборки массива
-  // с фильтрацией в коде (так требует методичка).
   async findFeedItem(id: number, next: boolean): Promise<SolutionView | undefined> {
     let entity: Solution | null;
 
@@ -92,7 +78,6 @@ export class SolutionsService {
     return entity ? this.toView(entity) : undefined;
   }
 
-  // Двойной слайдер: показываем растворы с концентрацией в диапазоне [min; max].
   async getAllPublished(min?: string, max?: string): Promise<SolutionView[]> {
     const { min: minVal, max: maxVal } = resolveFilterRange(min, max);
 
@@ -105,19 +90,12 @@ export class SolutionsService {
     return entities.map((s) => this.toView(s));
   }
 
-  // Создание черновика — через ORM. По заданию фото/видео на этом шаге не
-  // сохраняются, только название; остальные поля заполняются на публикации.
-  // Черновик у "создателя" может быть только один — если уже есть, просто
-  // возвращаемся к нему, новую строку не создаём.
   async createDraft(substanceName: string): Promise<void> {
     const existing = await this.solutionRepo.findOne({
       where: { status: 'draft', creatorId: DEFAULT_CREATOR_ID },
     });
     if (existing) return;
 
-    // На «Далее» известны только название и медиа (в ЛР2 файлы не грузим —
-    // пустой ключ означает «показать дефолтные фото/видео»). Описание и поля
-    // по теме остаются NULL до публикации.
     const draft = this.solutionRepo.create({
       substanceName,
       image: '',
@@ -128,8 +106,6 @@ export class SolutionsService {
     await this.solutionRepo.save(draft);
   }
 
-  // Публикация черновика — через ORM. Заполняем описание и два поля по теме,
-  // меняем статус на published и проставляем дату формирования.
   async publishDraft(fields: {
     molarConcentration: number;
     ph: number;
@@ -147,8 +123,6 @@ export class SolutionsService {
     });
   }
 
-  // Логическое удаление — НЕ через ORM, а сырым SQL UPDATE (так требует
-  // задание ЛР2: получение/создание/публикация через ORM, удаление — курсором).
   async deleteSolution(id: number): Promise<void> {
     await this.solutionRepo.query('UPDATE solutions SET status = $1 WHERE solution_id = $2', [
       'deleted',

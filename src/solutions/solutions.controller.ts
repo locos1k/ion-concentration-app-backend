@@ -24,7 +24,6 @@ export class SolutionsController {
   @Get('draft')
   @Render('solution-add')
   async getDraftPage() {
-    // Дефолтные медиа нужны и когда черновика ещё нет (шаг «Далее»)
     return {
       draft: await this.solutionsService.getDraft(),
       defaultImageUrl: DEFAULT_IMAGE_URL,
@@ -32,7 +31,6 @@ export class SolutionsController {
     };
   }
 
-  // Шаг 1 добавления: только название, фото/видео на этом шаге не сохраняются.
   @Post('draft')
   @Redirect('/solutions/draft', 302)
   async createDraft(@Body('substanceName') substanceName?: string) {
@@ -41,7 +39,6 @@ export class SolutionsController {
     }
   }
 
-  // Шаг 2: заполняем оставшиеся поля и публикуем черновик.
   @Post('draft/publish')
   @Redirect('/solutions/list', 302)
   async publishDraft(
@@ -56,7 +53,6 @@ export class SolutionsController {
     });
   }
 
-  // Двойной слайдер: ?min=..&max=.. — молярная концентрация в диапазоне
   @Get('list')
   @Render('solution-grid')
   async getGrid(@Query('min') min?: string, @Query('max') max?: string) {
@@ -71,7 +67,6 @@ export class SolutionsController {
     };
   }
 
-  // Логическое удаление — только смена статуса, сырым SQL (см. сервис).
   @Post(':id/delete')
   @Redirect('/solutions/list', 302)
   async deleteSolution(@Param('id', ParseIntPipe) id: number) {

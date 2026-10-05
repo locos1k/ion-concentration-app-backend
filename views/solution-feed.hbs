@@ -10,14 +10,10 @@
   <div class="screen feed-screen">
     {{#if solution}}
     <div class="media-wrap">
-      <!-- poster не задаём намеренно: он моргал перед стартом видео.
-           videoUrl всегда заполнен — при пустом поле в БД сервис подставляет
-           дефолтное видео с SSR-сервера. -->
       <video class="media" autoplay muted loop playsinline preload="auto">
         <source src="{{solution.videoUrl}}">
       </video>
 
-      <!-- Справа сверху вниз: лайк, «следующий», затем иконки-показатели pH и молярной концентрации -->
       <div class="side-actions">
         <div class="like-btn">
           <img class="like-icon" src="/img/solution-like-icon.png" alt="Лайки">
@@ -45,7 +41,6 @@
         <div class="info-text">
           <h1 class="title">{{solution.substanceName}}</h1>
 
-          <!-- «Ещё» без JS: нативный <details>, видно ровно 2 строки до раскрытия -->
           <div class="description">{{solution.descriptionShort}}{{#if solution.descriptionRest}}<details class="desc-more"><summary></summary>{{solution.descriptionRest}}</details>{{/if}}</div>
         </div>
       </div>

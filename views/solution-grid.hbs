@@ -10,11 +10,6 @@
   <div class="screen grid-screen">
     <h1 class="title">Каталог растворов</h1>
 
-    <!-- Двойной слайдер на чистом HTML: два <input type=range>, наложенные
-         друг на друга (см. .range-slider в CSS), оба на всём диапазоне
-         FILTER_RANGE независимо друг от друга. Фильтр на сервере — растворы
-         с концентрацией между min и max; если бегунки перепутаны местами
-         (min > max), это не ошибка — просто ничего не находится. -->
     <form class="filter-form" method="GET" action="/solutions/list">
       <label class="field-label">Молярная концентрация, моль/л: от {{filterMin}} до {{filterMax}}</label>
       <div class="range-slider">
