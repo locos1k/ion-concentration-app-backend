@@ -10,8 +10,8 @@ const MEDIA_BASE_URL =
 // Фото/видео по умолчанию — для новых черновиков (в ЛР2 файлы при создании
 // не сохраняются) и для случаев с недоступным файлом. Хранятся локально на
 // SSR-сервере (public/img), а не в MinIO.
-const DEFAULT_IMAGE_URL = '/img/default-solution.PNG';
-const DEFAULT_VIDEO_URL = '/img/default-solution.mp4';
+export const DEFAULT_IMAGE_URL = '/img/default-solution.PNG';
+export const DEFAULT_VIDEO_URL = '/img/default-solution.mp4';
 
 // Пока нет реального пользователя (авторизация — ЛР4), все черновики
 // принадлежат одному фиксированному "создателю". Станет функцией-singleton в ЛР3.
@@ -115,27 +115,22 @@ export class SolutionsService {
     });
     if (existing) return;
 
+    // На «Далее» известны только название и медиа (в ЛР2 файлы не грузим —
+    // пустой ключ означает «показать дефолтные фото/видео»). Описание и поля
+    // по теме остаются NULL до публикации.
     const draft = this.solutionRepo.create({
       substanceName,
-      chemicalFormula: '',
-      electrolyteType: '',
-      molarConcentration: 0,
-      ph: 0,
-      description: '',
       image: '',
       video: '',
       status: 'draft',
-      publishedAt: null,
       creatorId: DEFAULT_CREATOR_ID,
     });
     await this.solutionRepo.save(draft);
   }
 
-  // Публикация черновика — через ORM. Меняем статус на published и
-  // проставляем дату формирования.
+  // Публикация черновика — через ORM. Заполняем описание и два поля по теме,
+  // меняем статус на published и проставляем дату формирования.
   async publishDraft(fields: {
-    chemicalFormula: string;
-    electrolyteType: string;
     molarConcentration: number;
     ph: number;
     description: string;
@@ -162,14 +157,13 @@ export class SolutionsService {
   }
 
   private toView(s: Solution): SolutionView {
-    const [head, rest] = this.splitDescription(s.description);
+    const description = s.description ?? '';
+    const [head, rest] = this.splitDescription(description);
     return {
       id: s.id,
       substanceName: s.substanceName,
-      chemicalFormula: s.chemicalFormula,
-      electrolyteType: s.electrolyteType,
       molarConcentration: s.molarConcentration,
-      description: s.description,
+      description,
       ph: s.ph,
       image: s.image,
       video: s.video,

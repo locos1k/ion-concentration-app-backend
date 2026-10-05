@@ -19,7 +19,7 @@ function registerPartials(dir: string) {
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Статика: /css/style.css и /img/*.svg берутся из папки public
+  // Статика: /css/solutions.css и /img/*.svg берутся из папки public
   app.useStaticAssets(join(rootDir, 'public'));
 
   // Handlebars как шаблонизатор, шаблоны страниц — в views/

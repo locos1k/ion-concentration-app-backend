@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Добавление раствора</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/solutions.css">
 </head>
 <body class="app">
   <div class="screen add-screen">
@@ -32,12 +32,6 @@
       <label class="field-label" for="substanceName">Название вещества</label>
       <input class="field-input" id="substanceName" type="text" value="{{draft.substanceName}}" disabled>
 
-      <label class="field-label" for="chemicalFormula">Химическая формула</label>
-      <input class="field-input" id="chemicalFormula" name="chemicalFormula" type="text" value="{{draft.chemicalFormula}}">
-
-      <label class="field-label" for="electrolyteType">Тип электролита</label>
-      <input class="field-input" id="electrolyteType" name="electrolyteType" type="text" value="{{draft.electrolyteType}}">
-
       <label class="field-label" for="molarConcentration">Молярная концентрация, моль/л</label>
       <input class="field-input" id="molarConcentration" name="molarConcentration" type="number" step="0.01" value="{{draft.molarConcentration}}">
 
@@ -56,13 +50,16 @@
 
       <p class="field-label">Медиа</p>
       <div class="media-buttons">
+        <!-- Файлов у раствора ещё нет — в превью дефолтные фото/видео -->
         <label class="media-btn">
           <input type="file" name="photo" accept="image/*" hidden>
           <span>+ Фото</span>
+          <img class="media-thumb" src="{{defaultImageUrl}}" alt="Фото по умолчанию">
         </label>
         <label class="media-btn">
           <input type="file" name="video" accept="video/*" hidden>
           <span>+ Видео</span>
+          <video class="media-thumb" src="{{defaultVideoUrl}}" poster="{{defaultImageUrl}}" autoplay muted loop playsinline></video>
         </label>
       </div>
 
@@ -73,7 +70,7 @@
     </form>
     {{/if}}
 
-    {{> navbar}}
+    {{> solutions-navbar}}
   </div>
 </body>
 </html>

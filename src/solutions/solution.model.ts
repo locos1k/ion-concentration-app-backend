@@ -3,11 +3,9 @@ import { SolutionStatus } from './entities/solution.entity.js';
 export interface SolutionView {
   id: number;
   substanceName: string;
-  chemicalFormula: string;
-  electrolyteType: string;
-  molarConcentration: number;
+  molarConcentration: number | null;
   description: string;
-  ph: number;
+  ph: number | null;
   image: string;
   video: string;
   likedBy: number[];

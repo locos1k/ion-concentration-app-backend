@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller.js';
+import { SolutionsRedirectController } from './solutions-redirect.controller.js';
 import { SolutionsModule } from './solutions/solutions.module.js';
 
 @Module({
@@ -23,6 +23,6 @@ import { SolutionsModule } from './solutions/solutions.module.js';
     }),
     SolutionsModule,
   ],
-  controllers: [AppController],
+  controllers: [SolutionsRedirectController],
 })
 export class AppModule {}

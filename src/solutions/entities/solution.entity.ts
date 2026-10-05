@@ -13,10 +13,11 @@ import { User } from './user.entity.js';
 export type SolutionStatus = 'draft' | 'published' | 'deleted';
 
 // pg возвращает NUMERIC строкой (чтобы не терять точность) — приводим к number,
-// т.к. сервис сравнивает molarConcentration/ph как обычные числа.
+// т.к. сервис сравнивает molarConcentration/ph как обычные числа. У черновика
+// эти поля ещё NULL — его пропускаем как есть, иначе parseFloat(null) даст NaN.
 const numericTransformer = {
-  to: (value: number) => value,
-  from: (value: string) => parseFloat(value),
+  to: (value: number | null) => value,
+  from: (value: string | null) => (value === null ? null : parseFloat(value)),
 };
 
 @Entity('solutions')
@@ -27,26 +28,30 @@ export class Solution {
   @Column({ name: 'name', type: 'varchar', length: 70 })
   substanceName: string;
 
-  @Column({ name: 'formula', type: 'varchar', length: 20 })
-  chemicalFormula: string;
-
-  @Column({ name: 'electrolyte_type', type: 'varchar', length: 20 })
-  electrolyteType: string;
-
+  // description, molar_concentration и ph не заполняются на шаге «Далее» (там
+  // только название + медиа), а появляются при публикации — поэтому nullable.
   @Column({
     name: 'molar_concentration',
     type: 'numeric',
     precision: 5,
     scale: 3,
+    nullable: true,
     transformer: numericTransformer,
   })
-  molarConcentration: number;
+  molarConcentration: number | null;
 
-  @Column({ name: 'ph', type: 'numeric', precision: 4, scale: 2, transformer: numericTransformer })
-  ph: number;
+  @Column({
+    name: 'ph',
+    type: 'numeric',
+    precision: 4,
+    scale: 2,
+    nullable: true,
+    transformer: numericTransformer,
+  })
+  ph: number | null;
 
-  @Column({ name: 'description', type: 'varchar', length: 500 })
-  description: string;
+  @Column({ name: 'description', type: 'varchar', length: 500, nullable: true })
+  description: string | null;
 
   @Column({ name: 'image', type: 'varchar', length: 255 })
   image: string;

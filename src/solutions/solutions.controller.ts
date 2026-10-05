@@ -9,16 +9,27 @@ import {
   Redirect,
   Render,
 } from '@nestjs/common';
-import { FILTER_RANGE, resolveFilterRange, SolutionsService } from './solutions.service.js';
+import {
+  DEFAULT_IMAGE_URL,
+  DEFAULT_VIDEO_URL,
+  FILTER_RANGE,
+  resolveFilterRange,
+  SolutionsService,
+} from './solutions.service.js';
 
 @Controller('solutions')
 export class SolutionsController {
   constructor(private readonly solutionsService: SolutionsService) {}
 
   @Get('draft')
-  @Render('add')
+  @Render('solution-add')
   async getDraftPage() {
-    return { draft: await this.solutionsService.getDraft() };
+    // Дефолтные медиа нужны и когда черновика ещё нет (шаг «Далее»)
+    return {
+      draft: await this.solutionsService.getDraft(),
+      defaultImageUrl: DEFAULT_IMAGE_URL,
+      defaultVideoUrl: DEFAULT_VIDEO_URL,
+    };
   }
 
   // Шаг 1 добавления: только название, фото/видео на этом шаге не сохраняются.
@@ -34,15 +45,11 @@ export class SolutionsController {
   @Post('draft/publish')
   @Redirect('/solutions/list', 302)
   async publishDraft(
-    @Body('chemicalFormula') chemicalFormula?: string,
-    @Body('electrolyteType') electrolyteType?: string,
     @Body('molarConcentration') molarConcentration?: string,
     @Body('ph') ph?: string,
     @Body('description') description?: string,
   ) {
     await this.solutionsService.publishDraft({
-      chemicalFormula: chemicalFormula ?? '',
-      electrolyteType: electrolyteType ?? '',
       molarConcentration: Number(molarConcentration) || 0,
       ph: Number(ph) || 0,
       description: description ?? '',
@@ -51,7 +58,7 @@ export class SolutionsController {
 
   // Двойной слайдер: ?min=..&max=.. — молярная концентрация в диапазоне
   @Get('list')
-  @Render('grid')
+  @Render('solution-grid')
   async getGrid(@Query('min') min?: string, @Query('max') max?: string) {
     const { min: filterMin, max: filterMax } = resolveFilterRange(min, max);
     return {
@@ -72,7 +79,7 @@ export class SolutionsController {
   }
 
   @Get(['/', ':id'])
-  @Render('feed')
+  @Render('solution-feed')
   async getFeed(@Param('id') id?: string, @Query('next') next?: string) {
     const solution = await this.solutionsService.findFeedItem(Number(id), next === 'true');
     return { solution };

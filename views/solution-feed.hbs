@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{#if solution}}{{solution.substanceName}}{{else}}Лента{{/if}}</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/solutions.css">
 </head>
 <body class="app">
   <div class="screen feed-screen">
@@ -20,7 +20,7 @@
       <!-- Справа сверху вниз: лайк, «следующий», затем иконки-показатели pH и молярной концентрации -->
       <div class="side-actions">
         <div class="like-btn">
-          <img class="like-icon" src="/img/like-icon.png" alt="Лайки">
+          <img class="like-icon" src="/img/solution-like-icon.png" alt="Лайки">
           <span>{{solution.likesCount}}</span>
         </div>
 
@@ -54,7 +54,7 @@
       <p class="empty">Опубликованных растворов пока нет</p>
     {{/if}}
 
-    {{> navbar}}
+    {{> solutions-navbar}}
   </div>
 </body>
 </html>

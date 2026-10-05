@@ -6,6 +6,8 @@
   --border: #6B7280;
   --green: #4BDE81;
   --green-bg: #1C3129;
+  --red: #FF6B6B;
+  --red-bg: #3A1F25;
   --screen-pad: 17px; 
 }
 
@@ -148,9 +150,9 @@ body.app {
   display: flex;
   flex-direction: column;
 }
-.media-buttons { display: flex; gap: 12px; margin-top: 6px; }
+.media-buttons { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
 .media-btn {
-  flex: 1; height: 40px;
+  width: 100%; height: 40px;
   background: transparent;
   border: 0.3px solid var(--border);
   border-radius: 9.85px;
@@ -282,33 +284,40 @@ body.app {
   gap: 16px;
   padding: 0 var(--screen-pad) 20px;
 }
-.solution-card {
+/* Карточка: рамка и фон у обёртки, чтобы кнопка «Удалить» лежала внутри карточки.
+   Подсветка рамки — только при наведении на саму ссылку, не на кнопку удаления. */
+.solution-card-wrapper {
   background: var(--panel);
   border: 0.3px solid var(--border);
   border-radius: 12px;
   padding: 12px;
   display: flex;
   flex-direction: column;
-  text-decoration: none;
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
-.solution-card:hover { border-color: var(--green); transform: translateY(-2px); }
-
-.solution-card-wrapper { position: relative; }
-.delete-form { position: absolute; top: 8px; right: 8px; z-index: 2; }
-.delete-btn {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 0.3px solid var(--border);
-  background: rgba(15, 17, 23, 0.75);
-  color: var(--border);
-  font-size: 12px;
-  line-height: 1;
-  cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
+.solution-card-wrapper:has(.solution-card:hover) { border-color: var(--green); transform: translateY(-2px); }
+.solution-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
 }
-.delete-btn:hover { border-color: #ff6b6b; color: #ff6b6b; }
+
+/* «Удалить» — такая же кнопка, как «Найти», только красная */
+.delete-form { margin-top: 12px; display: flex; }
+.delete-btn {
+  flex: 1;
+  height: 36px;
+  padding: 0 18px;
+  background: transparent;
+  border: 0.5px solid var(--red);
+  border-radius: 9.85px;
+  color: var(--red);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.delete-btn:hover { background: var(--red-bg); }
 .solution-card__image { width: 100%; height: 120px; object-fit: cover; background: var(--bg); border-radius: 8px; }
 .solution-card__title { font-size: 14px; font-weight: 700; margin-top: 10px; }
 .solution-card__likes {
