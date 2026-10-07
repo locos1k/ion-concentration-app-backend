@@ -10,6 +10,7 @@ export interface SolutionView {
   video: string;
   likedBy: number[];
   status: SolutionStatus;
+  creatorId: number;
   imageUrl: string;
   videoUrl: string;
   likesCount: number;

@@ -1,8 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, MoreThan, Repository } from 'typeorm';
-import { Solution } from './entities/solution.entity.js';
+import {
+  Between,
+  FindOptionsWhere,
+  LessThanOrEqual,
+  MoreThan,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
+import { PublishSolutionDto } from './dto/publish-solution.dto.js';
+import { Like } from './entities/like.entity.js';
+import { Solution, SolutionStatus } from './entities/solution.entity.js';
+import { SolutionMediaService } from './solution-media.service.js';
 import { SolutionView } from './solution.model.js';
+import { getCurrentUser } from '../users/current-user.js';
 
 const MEDIA_BASE_URL =
   process.env.MEDIA_BASE_URL ?? 'http://localhost:9000/solution-assets';
@@ -10,9 +21,19 @@ const MEDIA_BASE_URL =
 export const DEFAULT_IMAGE_URL = '/img/default-solution.PNG';
 export const DEFAULT_VIDEO_URL = '/img/default-solution.mp4';
 
-const DEFAULT_CREATOR_ID = 1;
-
 const DESCRIPTION_HEAD = 65;
+
+const ALLOWED_TRANSITIONS: Record<SolutionStatus, SolutionStatus[]> = {
+  draft: ['published', 'deleted'],
+  published: ['deleted'],
+  deleted: [],
+};
+
+function assertTransition(from: SolutionStatus, to: SolutionStatus): void {
+  if (!ALLOWED_TRANSITIONS[from].includes(to)) {
+    throw new ConflictException(`Нельзя изменить статус «${from}» на «${to}»`);
+  }
+}
 
 export const FILTER_RANGE = { min: 0, max: 0.25, step: 0.01 } as const;
 
@@ -36,6 +57,9 @@ export class SolutionsService {
   constructor(
     @InjectRepository(Solution)
     private readonly solutionRepo: Repository<Solution>,
+    @InjectRepository(Like)
+    private readonly likeRepo: Repository<Like>,
+    private readonly media: SolutionMediaService,
   ) {}
 
   async findFeedItem(id: number, next: boolean): Promise<SolutionView | undefined> {
@@ -72,7 +96,7 @@ export class SolutionsService {
 
   async getDraft(): Promise<SolutionView | undefined> {
     const entity = await this.solutionRepo.findOne({
-      where: { status: 'draft' },
+      where: { status: 'draft', creatorId: getCurrentUser().id },
       relations: { likes: true },
     });
     return entity ? this.toView(entity) : undefined;
@@ -92,7 +116,7 @@ export class SolutionsService {
 
   async createDraft(substanceName: string): Promise<void> {
     const existing = await this.solutionRepo.findOne({
-      where: { status: 'draft', creatorId: DEFAULT_CREATOR_ID },
+      where: { status: 'draft', creatorId: getCurrentUser().id },
     });
     if (existing) return;
 
@@ -101,7 +125,7 @@ export class SolutionsService {
       image: '',
       video: '',
       status: 'draft',
-      creatorId: DEFAULT_CREATOR_ID,
+      creatorId: getCurrentUser().id,
     });
     await this.solutionRepo.save(draft);
   }
@@ -112,7 +136,7 @@ export class SolutionsService {
     description: string;
   }): Promise<void> {
     const draft = await this.solutionRepo.findOne({
-      where: { status: 'draft', creatorId: DEFAULT_CREATOR_ID },
+      where: { status: 'draft', creatorId: getCurrentUser().id },
     });
     if (!draft) return;
 
@@ -130,6 +154,108 @@ export class SolutionsService {
     ]);
   }
 
+  async findPublished(min?: number, max?: number): Promise<SolutionView[]> {
+    const where: FindOptionsWhere<Solution> = { status: 'published' };
+    if (min !== undefined && max !== undefined) where.molarConcentration = Between(min, max);
+    else if (min !== undefined) where.molarConcentration = MoreThanOrEqual(min);
+    else if (max !== undefined) where.molarConcentration = LessThanOrEqual(max);
+
+    const entities = await this.solutionRepo.find({
+      where,
+      order: { id: 'ASC' },
+      relations: { likes: true },
+    });
+    return entities.map((s) => this.toView(s));
+  }
+
+  async createDraftWithMedia(
+    substanceName: string,
+    image: Express.Multer.File,
+    video: Express.Multer.File,
+  ): Promise<SolutionView> {
+    const creatorId = getCurrentUser().id;
+    const existing = await this.solutionRepo.findOne({ where: { status: 'draft', creatorId } });
+    if (existing) throw new ConflictException('У пользователя уже есть черновик');
+
+    const uploaded: string[] = [];
+    try {
+      const imageKey = await this.media.upload(image, 'image');
+      uploaded.push(imageKey);
+      const videoKey = await this.media.upload(video, 'video');
+      uploaded.push(videoKey);
+
+      const saved = await this.solutionRepo.save(
+        this.solutionRepo.create({
+          substanceName,
+          image: imageKey,
+          video: videoKey,
+          status: 'draft',
+          creatorId,
+        }),
+      );
+      return await this.loadView(saved.id);
+    } catch (error) {
+      await Promise.allSettled(uploaded.map((key) => this.media.remove(key)));
+      throw error;
+    }
+  }
+
+  async publish(id: number, fields: PublishSolutionDto): Promise<SolutionView> {
+    const entity = await this.findOwned(id);
+    assertTransition(entity.status, 'published');
+
+    await this.solutionRepo.update(id, {
+      description: fields.description,
+      molarConcentration: fields.molarConcentration,
+      ph: fields.ph,
+      status: 'published',
+      publishedAt: new Date(),
+    });
+    return this.loadView(id);
+  }
+
+  async remove(id: number): Promise<void> {
+    const entity = await this.findOwned(id);
+    assertTransition(entity.status, 'deleted');
+    await this.solutionRepo.update(id, { status: 'deleted' });
+  }
+
+  async setLike(id: number, value: 0 | 1): Promise<SolutionView> {
+    const userId = getCurrentUser().id;
+    const entity = await this.solutionRepo.findOne({
+      where: { id, status: 'published' },
+      relations: { likes: true },
+    });
+    if (!entity) throw new NotFoundException(`Раствор ${id} не найден`);
+
+    const existing = entity.likes.find((like) => like.userId === userId);
+    if (value === 1 && !existing) {
+      await this.likeRepo.save(this.likeRepo.create({ userId, solutionId: id }));
+    } else if (value === 0 && existing) {
+      await this.likeRepo.delete(existing.id);
+    }
+    return this.loadView(id);
+  }
+
+  private async findOwned(id: number): Promise<Solution> {
+    const entity = await this.solutionRepo.findOne({ where: { id } });
+    if (!entity || entity.status === 'deleted') {
+      throw new NotFoundException(`Раствор ${id} не найден`);
+    }
+    if (entity.creatorId !== getCurrentUser().id) {
+      throw new ForbiddenException('Менять можно только свои растворы');
+    }
+    return entity;
+  }
+
+  private async loadView(id: number): Promise<SolutionView> {
+    const entity = await this.solutionRepo.findOneOrFail({
+      where: { id },
+      relations: { likes: true },
+    });
+    return this.toView(entity);
+  }
+
   private toView(s: Solution): SolutionView {
     const description = s.description ?? '';
     const [head, rest] = this.splitDescription(description);
@@ -143,6 +269,7 @@ export class SolutionsService {
       video: s.video,
       likedBy: s.likes.map((like) => like.userId),
       status: s.status,
+      creatorId: s.creatorId,
       imageUrl: s.image ? `${MEDIA_BASE_URL}/${s.image}` : DEFAULT_IMAGE_URL,
       videoUrl: s.video ? `${MEDIA_BASE_URL}/${s.video}` : DEFAULT_VIDEO_URL,
       likesCount: s.likes.length,
